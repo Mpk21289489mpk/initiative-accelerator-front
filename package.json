@@ -16,6 +16,7 @@
     "@types/node": "^16.11.59",
     "@types/react": "^18.0.20",
     "@types/react-dom": "^18.0.6",
+    "axios": "^1.6.7",
     "crypto-js": "^4.1.1",
     "mobx-react": "^7.5.3",
     "react": "^18.2.0",
