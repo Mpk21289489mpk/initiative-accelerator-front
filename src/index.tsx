@@ -2,7 +2,9 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import './normalize.css';
 import './index.css';
+
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+
 import MainPage from './Pages/index';
 import CabinetPage from './Pages/cabinet';
 import { GlobalUserStateContextProvider } from './Modules/User/User';
@@ -28,16 +30,17 @@ import EditUserPage from './Pages/editUserPage';
 import InitiativeStatPage from './Pages/initiativeStat';
 import CheckUserInfoPage from './Pages/checkUserInfo';
 import ShopItemStatPage from './Pages/shopItemStatPage';
-import { globalAny } from './Modules/globalAny';
+// import { globalAny } from './Modules/globalAny';  // можно вообще закомментировать, если нигде не используется
 import SiteClosed from './Modules/SiteClosed';
-import { siteStates } from './Modules/SiteClosed';
 import VerifMail from './Pages/verifMail';
 import AddPrvtShopItemPage from './Pages/addPrvtShopItemPage';
 import BigInitiativesStatistics from './Pages/statistic/bigInitiativesStatistics';
 
 function Index() {
   return (
-    <SiteClosed>
+    // ВРЕМЕННО закомментировано, чтобы проверить, грузится ли приложение.
+    // Если всё заработает — можно вернуть и чинить логику внутри SiteClosed.
+    {/* <SiteClosed> */}
       <BrowserRouter>
         <GlobalUserStateContextProvider>
           <Header />
@@ -67,13 +70,15 @@ function Index() {
               <Route path='/addPrivateInitiative' element={<AddPrivateInitiativePage />} />
               <Route path='/addPublicInitiative' element={<AddPublicInitiativePage />} />
               <Route path='/mail/verif/:id/:code' element={<VerifMail />} />
-              <Route path='/statistic/bigInitiativesStatistics.csv' element={<BigInitiativesStatistics />} />
+
+              // Исправлено: убрали .csv, чтобы Vercel не пытался отдать статический файл вместо страницы
+              <Route path='/statistic/big-initiatives-statistics' element={<BigInitiativesStatistics />} />
             </Routes>
           </div>
           <Footer />
         </GlobalUserStateContextProvider>
       </BrowserRouter>
-    </SiteClosed>
+    {/* </SiteClosed> */}
   );
 }
 
