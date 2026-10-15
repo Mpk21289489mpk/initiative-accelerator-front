@@ -1,0 +1,3 @@
+[build]
+  publish = "build-new"
+  command = "npm install && npm run build && mv build build-new"
