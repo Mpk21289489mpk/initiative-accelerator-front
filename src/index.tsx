@@ -1,17 +1,15 @@
 import React from 'react';
-import { createRoot } from "react-dom/client"
-import "./normalize.css";
-import ReactDOM from 'react-dom';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { createRoot } from 'react-dom/client';
+import './normalize.css';
 import './index.css';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import MainPage from './Pages/index';
 import CabinetPage from './Pages/cabinet';
-import "./index.css";
 import { GlobalUserStateContextProvider } from './Modules/User/User';
-import AddPrivateInitiativePage from "./Pages/addPrivateInitiative";
+import AddPrivateInitiativePage from './Pages/addPrivateInitiative';
 import Header from './Modules/header';
 import Footer from './Modules/footer';
-import RatingPage from "./Pages/rating";
+import RatingPage from './Pages/rating';
 import AuthPage from './Pages/auth';
 import RegPage from './Pages/register';
 import ListInitiativesResultsPage from './Pages/listInitiativesResults';
@@ -38,50 +36,46 @@ import AddPrvtShopItemPage from './Pages/addPrvtShopItemPage';
 import BigInitiativesStatistics from './Pages/statistic/bigInitiativesStatistics';
 
 function Index() {
-
-  globalAny.ym(90968310, 'hit', document.location.href);
-
-  return<SiteClosed>
-
-
-    <BrowserRouter>
-      <GlobalUserStateContextProvider>
-        <Header />
-        <div className='container'>
-          <Routes>
-            <Route path='/' element={<MainPage />}></Route>
-            <Route path='/auth' element={<AuthPage />}></Route>
-            <Route path='/register' element={<RegPage />}></Route>
-            <Route path='/cab' element={<CabinetPage />}></Route>
-            <Route path='/profile' element={<ProfilePage />}></Route>
-            <Route path='/rating' element={<RatingPage />}></Route>
-            <Route path='/users' element={<ListOfUsersPage />}></Route>
-            <Route path='/users/check/:user_id' element={<CheckUserInfoPage />}></Route>
-            <Route path='/users/edit/:user_id' element={<EditUserPage />}></Route>
-            <Route path='/shop' element={<ShopPage />}></Route>
-            <Route path='/shop/story' element={<MyShopLogsPage />}></Route>
-            <Route path='/shop/edit/:item_id' element={<EditShopItemPage />}></Route>
-            <Route path='/shop/stat/:item_id' element={<ShopItemStatPage />}></Route>
-            <Route path='/shop/edit' element={<ShopItemsListPage />}></Route>
-            <Route path='/shop/add/public' element={<AddShopItemPage />}></Route>
-            <Route path='/shop/add/prvt' element={<AddPrvtShopItemPage />}></Route>
-            <Route path='/initiatives/edit' element={<ListOfAllInitiativesPage />}></Route>
-            <Route path='/initiatives/results' element={<ListInitiativesResultsPage />}></Route>
-            <Route path='/initiatives/stat/:initiative_id' element={<InitiativeStatPage />}></Route>
-            <Route path='/initiatives/edit/:initiative_id' element={<EditInitiativePage />}></Route>
-            <Route path='/initiatives/check/:initiative_id' element={<CheckInitiativePage />}></Route>
-            <Route path='/addPrivateInitiative' element={<AddPrivateInitiativePage />}></Route>
-            <Route path='/addPublicInitiative' element={<AddPublicInitiativePage />}></Route>
-            <Route path='/mail/verif/:id/:code' element={<VerifMail />}></Route>
-            <Route path='/statistic/bigInitiativesStatistics.csv' element={<BigInitiativesStatistics />}></Route>
-          </Routes>
-        </div>
-        <Footer />
-      </GlobalUserStateContextProvider>
-    </BrowserRouter>  
-</SiteClosed>
+  return (
+    <SiteClosed>
+      <BrowserRouter>
+        <GlobalUserStateContextProvider>
+          <Header />
+          <div className='container'>
+            <Routes>
+              <Route path='/' element={<MainPage />} />
+              <Route path='/auth' element={<AuthPage />} />
+              <Route path='/register' element={<RegPage />} />
+              <Route path='/cab' element={<CabinetPage />} />
+              <Route path='/profile' element={<ProfilePage />} />
+              <Route path='/rating' element={<RatingPage />} />
+              <Route path='/users' element={<ListOfUsersPage />} />
+              <Route path='/users/check/:user_id' element={<CheckUserInfoPage />} />
+              <Route path='/users/edit/:user_id' element={<EditUserPage />} />
+              <Route path='/shop' element={<ShopPage />} />
+              <Route path='/shop/story' element={<MyShopLogsPage />} />
+              <Route path='/shop/edit/:item_id' element={<EditShopItemPage />} />
+              <Route path='/shop/stat/:item_id' element={<ShopItemStatPage />} />
+              <Route path='/shop/edit' element={<ShopItemsListPage />} />
+              <Route path='/shop/add/public' element={<AddShopItemPage />} />
+              <Route path='/shop/add/prvt' element={<AddPrvtShopItemPage />} />
+              <Route path='/initiatives/edit' element={<ListOfAllInitiativesPage />} />
+              <Route path='/initiatives/results' element={<ListInitiativesResultsPage />} />
+              <Route path='/initiatives/stat/:initiative_id' element={<InitiativeStatPage />} />
+              <Route path='/initiatives/edit/:initiative_id' element={<EditInitiativePage />} />
+              <Route path='/initiatives/check/:initiative_id' element={<CheckInitiativePage />} />
+              <Route path='/addPrivateInitiative' element={<AddPrivateInitiativePage />} />
+              <Route path='/addPublicInitiative' element={<AddPublicInitiativePage />} />
+              <Route path='/mail/verif/:id/:code' element={<VerifMail />} />
+              <Route path='/statistic/bigInitiativesStatistics.csv' element={<BigInitiativesStatistics />} />
+            </Routes>
+          </div>
+          <Footer />
+        </GlobalUserStateContextProvider>
+      </BrowserRouter>
+    </SiteClosed>
+  );
 }
 
-let rootElement = createRoot(document.getElementById('root')!);
-
+const rootElement = createRoot(document.getElementById('root')!);
 rootElement.render(<Index />);
