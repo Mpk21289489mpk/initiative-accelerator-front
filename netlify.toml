@@ -1,5 +1,6 @@
 [build]
   publish = "build"
+  command = "npm run build"
 
 [build.environment]
   REACT_APP_API_URL = "https://initiative-accelerator-server-g2k9zxzap-accelerators-projects.vercel.app"
