@@ -1,6 +1,10 @@
 [build]
+  base = "/"
   publish = "build"
   command = "npm install && npm run build"
 
-[build.environment]
-  REACT_APP_API_URL = "https://initiative-accelerator-server-g2k9zxzap-accelerators-projects.vercel.app"
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
