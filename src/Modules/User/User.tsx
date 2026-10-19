@@ -42,13 +42,19 @@ export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
     });
 
     async function updateUserFromServer() {
+        const apiUrl = process.env.REACT_APP_API_URL;
+        if (!apiUrl) {
+            console.warn('REACT_APP_API_URL is not set');
+            return;
+        }
+
         try {
             const resp = await fetch(
-                `\${process.env.REACT_APP_BACKEND_SERVER_DOMAIN}/api/get_me/`,
+                `${apiUrl}/api/get_me/`,
                 {
                     method: 'GET',
                     headers: {
-                        Authorization: `Bearer \${state.token}`
+                        Authorization: `Bearer ${state.token}`
                     }
                 }
             );
@@ -62,6 +68,7 @@ export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
             dispatch(user);
             localStorage.setItem('userData', JSON.stringify(user));
         } catch (err) {
+            console.error('Failed to fetch user:', err);
             localStorage.clear();
         }
     }
