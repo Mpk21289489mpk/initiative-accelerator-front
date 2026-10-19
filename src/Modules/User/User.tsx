@@ -7,11 +7,11 @@ export interface IUserProviderProps {
 }
 
 export const defaultUserParams: IUser = {
-    name: 'default',
-    surname: 'default',
-    email: 'default',
-    id: 'default',
-    token: '', // пустой вместо 'default' — это сразу отсекает лишние запросы
+    name: 'guest',
+    surname: '',
+    email: '',
+    id: '',
+    token: '', // Пустая строка — гарантия, что не полетит запрос с мусором
     role: userRoles.default,
     birth: new Date('2000-01-01'),
     edu_group: null,
@@ -43,15 +43,16 @@ export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
     });
 
     async function updateUserFromServer() {
-        const apiUrl = process.env.REACT_APP_API_URL;
+        // ВАЖНО: используем API_URL (без префикса REACT_APP_) — это то, что ты задашь в Vercel
+        const apiUrl = process.env.API_URL;
 
-        // Если переменная не задана — вообще не делаем запрос
+        console.log('[Auth] API URL resolved to:', apiUrl);
+
         if (!apiUrl) {
-            console.warn('REACT_APP_API_URL is not set. Skipping user fetch.');
+            console.warn('[Auth] API_URL is missing. Skipping user fetch.');
             return;
         }
 
-        // Не делаем запрос, если токена нет
         if (!state.token) {
             return;
         }
@@ -68,8 +69,7 @@ export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
             );
 
             if (!resp.ok) {
-                // При ошибке авторизации — сбрасываем состояние, но не ломаем рендер
-                console.warn('Auth failed, clearing session');
+                console.warn('[Auth] Auth failed, clearing session.');
                 localStorage.clear();
                 dispatch(defaultUserParams);
                 return;
@@ -79,8 +79,7 @@ export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
             dispatch(user);
             localStorage.setItem('userData', JSON.stringify(user));
         } catch (err) {
-            // Сетевые ошибки (сервер недоступен) — просто логируем, не сбрасываем данные
-            console.error('Failed to fetch user:', err);
+            console.error('[Auth] Failed to fetch user:', err);
         }
     }
 
@@ -98,4 +97,3 @@ export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
 export const useGlobalUserState = () => {
     return React.useContext(globalUserContext);
 };
-
