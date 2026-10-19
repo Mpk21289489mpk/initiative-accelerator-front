@@ -19,7 +19,8 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "react-scripts": "5.0.1"
+    "react-scripts": "5.0.1",
+    "@types/react-dom": "^21.0.0"
   },
   "scripts": {
     "start": "react-scripts start",
