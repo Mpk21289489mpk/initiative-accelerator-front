@@ -11,7 +11,7 @@ export const defaultUserParams: IUser = {
     surname: 'default',
     email: 'default',
     id: 'default',
-    token: 'default',
+    token: '', // пустой вместо 'default' — это сразу отсекает лишние запросы
     role: userRoles.default,
     birth: new Date('2000-01-01'),
     edu_group: null,
@@ -37,14 +37,22 @@ export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
             const stored = localStorage.getItem('userData');
             return stored ? JSON.parse(stored) : defaultUserParams;
         } catch (e) {
+            console.error('Error parsing localStorage', e);
             return defaultUserParams;
         }
     });
 
     async function updateUserFromServer() {
         const apiUrl = process.env.REACT_APP_API_URL;
+
+        // Если переменная не задана — вообще не делаем запрос
         if (!apiUrl) {
-            console.warn('REACT_APP_API_URL is not set');
+            console.warn('REACT_APP_API_URL is not set. Skipping user fetch.');
+            return;
+        }
+
+        // Не делаем запрос, если токена нет
+        if (!state.token) {
             return;
         }
 
@@ -60,7 +68,10 @@ export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
             );
 
             if (!resp.ok) {
+                // При ошибке авторизации — сбрасываем состояние, но не ломаем рендер
+                console.warn('Auth failed, clearing session');
                 localStorage.clear();
+                dispatch(defaultUserParams);
                 return;
             }
 
@@ -68,15 +79,13 @@ export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
             dispatch(user);
             localStorage.setItem('userData', JSON.stringify(user));
         } catch (err) {
+            // Сетевые ошибки (сервер недоступен) — просто логируем, не сбрасываем данные
             console.error('Failed to fetch user:', err);
-            localStorage.clear();
         }
     }
 
     useEffect(() => {
-        if (state.token && state.token !== 'default') {
-            updateUserFromServer();
-        }
+        updateUserFromServer();
     }, [state.token]);
 
     return (
@@ -89,3 +98,4 @@ export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
 export const useGlobalUserState = () => {
     return React.useContext(globalUserContext);
 };
+
