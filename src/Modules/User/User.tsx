@@ -6,12 +6,13 @@ export interface IUserProviderProps {
     children: React.ReactNode;
 }
 
+// Дефолтные параметры для гостя — никаких лишних запросов
 export const defaultUserParams: IUser = {
     name: 'guest',
     surname: '',
     email: '',
     id: '',
-    token: '', // Пустая строка — гарантия, что не полетит запрос с мусором
+    token: '', 
     role: userRoles.default,
     birth: new Date('2000-01-01'),
     edu_group: null,
@@ -32,44 +33,48 @@ export const globalUserContext = React.createContext<IUserContext>({
 });
 
 export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
+    // Инициализация состояния из localStorage, с защитой от битого JSON
     const [state, dispatch] = useState<IUser>(() => {
         try {
             const stored = localStorage.getItem('userData');
-            return stored ? JSON.parse(stored) : defaultUserParams;
+            if (!stored) return defaultUserParams;
+            return JSON.parse(stored);
         } catch (e) {
-            console.error('Error parsing localStorage', e);
+            console.error('[Auth] Error parsing localStorage data, resetting to defaults', e);
             return defaultUserParams;
         }
     });
 
     async function updateUserFromServer() {
-        // ВАЖНО: используем API_URL (без префикса REACT_APP_) — это то, что ты задашь в Vercel
+        // ВАЖНО: используем process.env.API_URL (без префикса REACT_APP_)
+        // Это значение должно быть задано в Vercel Dashboard → Settings → Environment Variables
         const apiUrl = process.env.API_URL;
 
         console.log('[Auth] API URL resolved to:', apiUrl);
 
+        // Если переменная не подставилась (undefined) — вообще не делаем запрос.
+        // Приложение останется в режиме гостя и НЕ станет белым.
         if (!apiUrl) {
-            console.warn('[Auth] API_URL is missing. Skipping user fetch.');
+            console.warn('[Auth] API_URL is missing. Running in safe guest mode.');
             return;
         }
 
+        // Не делаем запрос, если токена нет
         if (!state.token) {
             return;
         }
 
         try {
-            const resp = await fetch(
-                `${apiUrl}/api/get_me/`,
-                {
-                    method: 'GET',
-                    headers: {
-                        Authorization: `Bearer ${state.token}`
-                    }
+            const resp = await fetch(`${apiUrl}/api/get_me/`, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${state.token}`
                 }
-            );
+            });
 
+            // Обработка ошибок авторизации
             if (!resp.ok) {
-                console.warn('[Auth] Auth failed, clearing session.');
+                console.warn('[Auth] Server rejected token. Clearing session.');
                 localStorage.clear();
                 dispatch(defaultUserParams);
                 return;
@@ -79,7 +84,8 @@ export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
             dispatch(user);
             localStorage.setItem('userData', JSON.stringify(user));
         } catch (err) {
-            console.error('[Auth] Failed to fetch user:', err);
+            // Сетевые ошибки (сервер недоступен, CORS и т.д.) — логируем, но НЕ ломаем рендер
+            console.error('[Auth] Network error while fetching user, staying as guest', err);
         }
     }
 
