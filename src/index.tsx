@@ -1,49 +1,56 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import './normalize.css';
-import './index.css';
 
+// Импортируем только самое необходимое для теста
 import { BrowserRouter } from 'react-router-dom';
-
-import IndexRoutes from './Pages/indexRoutes'; // мы чуть позже вынесем роуты отдельно — это снизит риск ошибки при импорте
 import { GlobalUserStateContextProvider } from './Modules/User/User';
 import Header from './Modules/header';
 import Footer from './Modules/footer';
-import SiteClosed from './Modules/SiteClosed';
 
-// Выносим всё в один компонент, чтобы легче было ловить ошибки
-function AppWrapper() {
+// Минимальный компонент, который точно отрендерится, если React жив
+function SafeApp() {
   return (
-    <BrowserRouter>
-      <GlobalUserStateContextProvider>
-        <Header />
-        <div className='container'>
-          <IndexRoutes />
-        </div>
-        <Footer />
-      </GlobalUserStateContextProvider>
-    </BrowserRouter>
+    <div style={{ padding: '40px', fontFamily: 'Arial', textAlign: 'center' }}>
+      <h1 style={{ color: '#d95030' }}>Идёт загрузка приложения...</h1>
+      <p>Если ты видишь этот текст — React работает. Ошибка дальше.</p>
+      <hr />
+      <BrowserRouter>
+        <GlobalUserStateContextProvider>
+          <Header />
+          <div className='container'>
+            <h2>Попытка загрузить роуты...</h2>
+            {/* Здесь мы пока ничего не рендерим, чтобы не ломать сборку импортом страниц */}
+          </div>
+          <Footer />
+        </GlobalUserStateContextProvider>
+      </BrowserRouter>
+    </div>
   );
 }
 
 const rootElement = document.getElementById('root');
+
 if (!rootElement) {
-  console.error('[Init] Error: #root element not found in index.html');
-  document.body.innerHTML = '<h1 style="color:red">Critical: #root not found</h1>';
+  console.error('[Init] ERROR: #root element not found in index.html');
+  document.body.innerHTML = '<h1 style="color:red">CRITICAL: #root not found</h1>';
 } else {
   const root = createRoot(rootElement);
   try {
     root.render(
       <React.StrictMode>
-        <AppWrapper />
+        <SafeApp />
       </React.StrictMode>
     );
   } catch (err) {
-    console.error('[Init] Critical render error:', err);
+    console.error('[Init] CRITICAL RENDER ERROR:', err);
     document.body.innerHTML = `
-      <h1 style="color:red">Render failed</h1>
-      <pre>${err instanceof Error ? err.message : String(err)}</pre>
-      <p>Check Console (F12) for details.</p>
+      <div style="padding: 40px; font-family: Arial; color: #d95030; text-align: center;">
+        <h1>CRITICAL RENDER FAILURE</h1>
+        <pre style="text-align: left; background: #fff; padding: 20px; border: 1px solid #ccc; max-width: 800px; margin: 0 auto;">
+${err instanceof Error ? err.message : String(err)}
+        </pre>
+        <p><strong>ВАЖНО:</strong> Открой консоль (F12 → Console) и скопируй сюда всё, что там красным.</p>
+      </div>
     `;
   }
 }
