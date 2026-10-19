@@ -1,30 +1,28 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import './normalize.css';
+import './index.css';
 
-// Импортируем только самое необходимое для теста
 import { BrowserRouter } from 'react-router-dom';
 import { GlobalUserStateContextProvider } from './Modules/User/User';
 import Header from './Modules/header';
 import Footer from './Modules/footer';
 
-// Минимальный компонент, который точно отрендерится, если React жив
-function SafeApp() {
+// Самый простой компонент, который просто рендерит структуру
+function App() {
   return (
-    <div style={{ padding: '40px', fontFamily: 'Arial', textAlign: 'center' }}>
-      <h1 style={{ color: '#d95030' }}>Идёт загрузка приложения...</h1>
-      <p>Если ты видишь этот текст — React работает. Ошибка дальше.</p>
-      <hr />
-      <BrowserRouter>
-        <GlobalUserStateContextProvider>
-          <Header />
-          <div className='container'>
-            <h2>Попытка загрузить роуты...</h2>
-            {/* Здесь мы пока ничего не рендерим, чтобы не ломать сборку импортом страниц */}
-          </div>
-          <Footer />
-        </GlobalUserStateContextProvider>
-      </BrowserRouter>
-    </div>
+    <BrowserRouter>
+      <GlobalUserStateContextProvider>
+        <Header />
+        <div className="container">
+          <h1 style={{ color: '#2196F3', padding: '20px' }}>
+            Initiative Accelerator — Загрузка...
+          </h1>
+          {/* Сюда позже вернём роуты, когда увидим этот текст */}
+        </div>
+        <Footer />
+      </GlobalUserStateContextProvider>
+    </BrowserRouter>
   );
 }
 
@@ -38,7 +36,7 @@ if (!rootElement) {
   try {
     root.render(
       <React.StrictMode>
-        <SafeApp />
+        <App />
       </React.StrictMode>
     );
   } catch (err) {
@@ -46,10 +44,8 @@ if (!rootElement) {
     document.body.innerHTML = `
       <div style="padding: 40px; font-family: Arial; color: #d95030; text-align: center;">
         <h1>CRITICAL RENDER FAILURE</h1>
-        <pre style="text-align: left; background: #fff; padding: 20px; border: 1px solid #ccc; max-width: 800px; margin: 0 auto;">
-${err instanceof Error ? err.message : String(err)}
-        </pre>
-        <p><strong>ВАЖНО:</strong> Открой консоль (F12 → Console) и скопируй сюда всё, что там красным.</p>
+        <pre>${err instanceof Error ? err.message : String(err)}</pre>
+        <p>Check Console (F12) for details.</p>
       </div>
     `;
   }
