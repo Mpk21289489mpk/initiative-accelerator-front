@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "react-scripts": "5.0.1",
-    "@types/react-dom": "^21.0.0"
+    "@types/react-dom": "^18.0.11"
   },
   "scripts": {
     "start": "react-scripts start",
