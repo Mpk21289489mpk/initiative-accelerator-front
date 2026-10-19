@@ -15,8 +15,9 @@ function AddPrivateInitiativePage() {
     const [btnDisabled, setBtnDisabled] = useState(false);
     const [countOfUsers, setCountOfUsers] = useState(1);
 
-    // Исправлено: явно указываем, что это массивы
+    // usersOptions — список опций для селекта; null означает, что данные ещё грузятся
     const [usersOptions, setUsersOptions] = useState<Option[] | null>(null);
+    // selectedValues — выбранные значения для каждого селекта (может быть null)
     const [selectedValues, setSelectedValues] = useState<(Option | null)[]>([]);
 
     const titleRef = useRef<HTMLInputElement | null>(null);
@@ -27,6 +28,7 @@ function AddPrivateInitiativePage() {
     const categoryRef = useRef<HTMLSelectElement | null>(null);
 
     useEffect(() => {
+        // Защита: не делаем запрос, если токена нет или он дефолтный
         if (!currentUser.userParams.token || currentUser.userParams.token === "default") {
             return;
         }
@@ -37,15 +39,14 @@ function AddPrivateInitiativePage() {
             body: JSON.stringify({ token: currentUser.userParams.token })
         })
             .then((res) => res.json())
-            // ИСПРАВЛЕНО: response — это массив пользователей
+            // ВАЖНО: response — это массив пользователей
             .then((response: IUser[]) => {
                 const options: Option[] = response.map((user) => ({
                     label: `${user.name} ${user.surname} (${user.email})`,
                     value: JSON.stringify(user)
                 }));
                 setUsersOptions(options);
-
-                // При загрузке данных инициализируем selectedValues пустыми значениями
+                // При загрузке инициализируем массив выбранных значений пустыми (null)
                 setSelectedValues(Array(countOfUsers).fill(null));
             })
             .catch((err) => {
@@ -55,7 +56,7 @@ function AddPrivateInitiativePage() {
             });
     }, [currentUser.userParams.token, countOfUsers]);
 
-    // Пересоздаём массив selectedValues при изменении countOfUsers
+    // Синхронизируем длину selectedValues с countOfUsers
     useEffect(() => {
         setSelectedValues((prev) => {
             const newValues = [...prev];
@@ -75,7 +76,8 @@ function AddPrivateInitiativePage() {
     };
 
     const createInitiative = () => {
-        const validUsers = selectedValues.filter((v) => v && v.value !== "");
+        // Предикат типа: после этого фильтра TypeScript знает, что validUsers — это Option[] (без null)
+        const validUsers = selectedValues.filter((v): v is Option => v !== null && v.value !== "");
 
         if (!titleRef.current?.value || validUsers.length === 0) {
             alert("Не выполнено, проверьте корректность заполнения полей!");
