@@ -1,4 +1,4 @@
-import React, { Children, Dispatch, ReactNode, SetStateAction, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { userRoles } from '../../enums/userRoles';
 import IUser from '../../interfaces/user';
 
@@ -6,14 +6,14 @@ export interface IUserProviderProps {
     children: React.ReactNode;
 }
 
-export let defaultUserParams: IUser = {
-    name: "default",
-    surname: "default",
-    email: "default",
-    id: "default",
-    token: "default",
+export const defaultUserParams: IUser = {
+    name: 'default',
+    surname: 'default',
+    email: 'default',
+    id: 'default',
+    token: 'default',
     role: userRoles.default,
-    birth: new Date("2000-01-01"),
+    birth: new Date('2000-01-01'),
     edu_group: null,
     avatarURI: null,
     score: 0,
@@ -23,7 +23,7 @@ export let defaultUserParams: IUser = {
 
 export interface IUserContext {
     userParams: IUser;
-    UpdateUser: Dispatch<SetStateAction<IUser>>;
+    UpdateUser: React.Dispatch<React.SetStateAction<IUser>>;
 }
 
 export const globalUserContext = React.createContext<IUserContext>({
@@ -32,20 +32,23 @@ export const globalUserContext = React.createContext<IUserContext>({
 });
 
 export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
-    if (!!localStorage.getItem("userData")) {
-        defaultUserParams = JSON.parse(localStorage.getItem("userData")!);
-    }
-
-    const [state, dispatch] = useState<IUser>(defaultUserParams);
+    const [state, dispatch] = useState<IUser>(() => {
+        try {
+            const stored = localStorage.getItem('userData');
+            return stored ? JSON.parse(stored) : defaultUserParams;
+        } catch (e) {
+            return defaultUserParams;
+        }
+    });
 
     async function updateUserFromServer() {
         try {
             const resp = await fetch(
                 `\${process.env.REACT_APP_BACKEND_SERVER_DOMAIN}/api/get_me/`,
                 {
-                    method: "GET",
+                    method: 'GET',
                     headers: {
-                        "Authorization": `Bearer \${state.token}`
+                        Authorization: `Bearer \${state.token}`
                     }
                 }
             );
@@ -56,18 +59,18 @@ export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
             }
 
             const user: IUser = await resp.json();
-            if (JSON.stringify(state) !== JSON.stringify(user)) {
-                dispatch(user);
-                localStorage.setItem("userData", JSON.stringify(user));
-            }
+            dispatch(user);
+            localStorage.setItem('userData', JSON.stringify(user));
         } catch (err) {
             localStorage.clear();
         }
     }
 
     useEffect(() => {
-        updateUserFromServer();
-    }, );
+        if (state.token && state.token !== 'default') {
+            updateUserFromServer();
+        }
+    }, [state.token]);
 
     return (
         <globalUserContext.Provider value={{ userParams: state, UpdateUser: dispatch }}>
