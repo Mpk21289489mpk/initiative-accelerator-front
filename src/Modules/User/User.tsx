@@ -47,11 +47,8 @@ export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
             setLoading(true);
             setError(null);
 
-            // 1. Используем ПРАВИЛЬНУЮ переменную для CRA
+            // Берём URL из переменной окружения (обязательно с префиксом REACT_APP_)
             const baseUrl = process.env.REACT_APP_API_URL;
-            
-            // Если вдруг переменная не подтянулась (например, локально без .env), 
-            // используем запасной вариант, чтобы не ломалось совсем.
             const fallbackUrl = 'https://initiative-accelerator-server-black.vercel.app';
             const finalUrl = baseUrl || fallbackUrl;
 
@@ -60,13 +57,14 @@ export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
 
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 8000); // Таймаут 8 сек
+                // Таймаут: если сеть медленная, запрос принудительно оборвётся через 8 сек
+                const timeoutId = setTimeout(() => controller.abort(), 8000); 
 
                 const response = await fetch(url, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        // Если токен хранится в localStorage:
+                        // Раскомментируй, когда будешь готов передавать реальный токен:
                         // 'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
                     credentials: 'include',
