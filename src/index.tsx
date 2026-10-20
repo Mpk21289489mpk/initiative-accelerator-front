@@ -7,7 +7,6 @@ import { BrowserRouter } from 'react-router-dom';
 import Header from './Modules/header';
 import Footer from './Modules/footer';
 
-// Типизируем пропсы для ErrorBoundary
 interface ErrorBoundaryProps {
   children: React.ReactNode;
 }
@@ -15,6 +14,7 @@ interface ErrorBoundaryProps {
 function ErrorBoundary({ children }: ErrorBoundaryProps) {
   const [error, setError] = React.useState<Error | null>(null);
 
+  // Ловим глобальные ошибки окна
   React.useEffect(() => {
     const handleError = (event: ErrorEvent) => {
       setError(event.error);
@@ -24,6 +24,7 @@ function ErrorBoundary({ children }: ErrorBoundaryProps) {
   }, []);
 
   if (error) {
+    // Гарантированно возвращаем React-элемент
     return (
       <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'Arial' }}>
         <h1 style={{ color: '#d32f2f' }}>💥 Ошибка на устройстве</h1>
@@ -38,7 +39,7 @@ function ErrorBoundary({ children }: ErrorBoundaryProps) {
     );
   }
 
-  return children;
+  return children as React.ReactElement; // Явно говорим TS: тут точно React-элемент
 }
 
 function App() {
