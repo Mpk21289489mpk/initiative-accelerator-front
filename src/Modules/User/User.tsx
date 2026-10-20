@@ -47,27 +47,29 @@ export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
             setLoading(true);
             setError(null);
 
-            // 1. Берём базовый URL из переменной окружения.
-            // Если её нет (локально без .env), используем твой домен по умолчанию.
-            const baseUrl = process.env.REACT_APP_API_URL || 'https://initiative-accelerator-server-black.vercel.app';
+            // 1. Используем ПРАВИЛЬНУЮ переменную для CRA
+            const baseUrl = process.env.REACT_APP_API_URL;
             
-            // 2. ВАЖНО: Это тот самый путь, который соответствует файлу api/get_me.ts
+            // Если вдруг переменная не подтянулась (например, локально без .env), 
+            // используем запасной вариант, чтобы не ломалось совсем.
+            const fallbackUrl = 'https://initiative-accelerator-server-black.vercel.app';
+            const finalUrl = baseUrl || fallbackUrl;
+
             const endpoint = '/api/get_me'; 
-            const url = `${baseUrl}${endpoint}`;
+            const url = `${finalUrl}${endpoint}`;
 
             try {
                 const controller = new AbortController();
-                // Таймаут: если сеть на телефоне медленная, запрос принудительно оборвётся через 8 сек
-                const timeoutId = setTimeout(() => controller.abort(), 8000); 
+                const timeoutId = setTimeout(() => controller.abort(), 8000); // Таймаут 8 сек
 
                 const response = await fetch(url, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        // Раскомментируй, если у тебя токен лежит в localStorage:
+                        // Если токен хранится в localStorage:
                         // 'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
-                    credentials: 'include', // Важно для куки-авторизации
+                    credentials: 'include',
                     signal: controller.signal
                 });
 
@@ -85,7 +87,6 @@ export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
             } catch (err) {
                 console.error('[Auth] Ошибка загрузки пользователя:', err);
                 if (isMounted) {
-                    // ГЛАВНОЕ: даже при ошибке мы снимаем лоадер, чтобы не было белого экрана
                     setError('Не удалось загрузить профиль. Проверьте соединение или попробуйте позже.');
                     setLoading(false);
                 }
