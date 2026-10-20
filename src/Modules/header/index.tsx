@@ -1,5 +1,5 @@
 import { Warning } from "@mui/icons-material";
-import { Alert } from "@mui/material";
+import { Alert, CircularProgress } from "@mui/material"; // Добавили CircularProgress
 import { userRoles } from "../../enums/userRoles";
 import NotifContainer from "../NotifContainer";
 import { useGlobalUserState } from "../User/User";
@@ -7,20 +7,16 @@ import { useGlobalUserState } from "../User/User";
 function Header() {
     const user = useGlobalUserState();
 
-    // Защита: если данные пользователя ещё не пришли, не рендерим меню с ролями
+    // Если данных нет — показываем явный экран загрузки вместо пустого хедера
     if (!user || !user.userParams) {
         return (
-            <nav className="navbar navbar-white bg-light">
-                <div className="container-fluid">
-                    <a className="navbar-brand ms-2" href="/">
-                        <img
-                            style={{ height: "40px", width: "40px" }}
-                            src="/logo192.png" 
-                            alt="logo" 
-                        />
-                    </a>
-                </div>
-            </nav>
+            <div style={{ padding: '40px', textAlign: 'center' }}>
+                <CircularProgress color="primary" />
+                <p style={{ marginTop: '10px', color: '#666' }}>
+                    Загрузка профиля пользователя... Это может занять несколько секунд на мобильном интернете.
+                </p>
+                <small style={{ color: '#999' }}>Если это висит долго — проверьте соединение.</small>
+            </div>
         );
     }
 
@@ -38,14 +34,10 @@ function Header() {
             <nav className="navbar navbar-white bg-light">
                 <div className="container-fluid">
                     <a className="navbar-brand ms-2" href="/">
-                        {/* ИСПРАВЛЕНО: используем локальный логотип из public */}
                         <img
-                            style={{
-                                height: "40px",
-                                width: "40px"
-                            }}
-                            src="/logo192.png"
-                            alt="logo"
+                            style={{ height: "40px", width: "40px" }}
+                            src="/logo192.png" 
+                            alt="logo" 
                         />
                     </a>
 
