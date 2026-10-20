@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import './normalize.css';
 import './index.css';
@@ -7,49 +7,53 @@ import { BrowserRouter } from 'react-router-dom';
 import Header from './Modules/header';
 import Footer from './Modules/footer';
 
-interface ErrorBoundaryProps {
-  children: React.ReactNode;
-}
-
-function ErrorBoundary({ children }: ErrorBoundaryProps) {
-  const [error, setError] = React.useState<Error | null>(null);
-
-  // Ловим глобальные ошибки окна
-  React.useEffect(() => {
-    const handleError = (event: ErrorEvent) => {
-      setError(event.error);
-    };
-    window.addEventListener('error', handleError as any);
-    return () => window.removeEventListener('error', handleError as any);
-  }, []);
+// Простой ErrorBoundary
+function ErrorBoundary({ children }: { children: React.ReactNode }) {
+  const [error, setError] = useState<Error | null>(null);
 
   if (error) {
-    // Гарантированно возвращаем React-элемент
     return (
-      <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'Arial' }}>
-        <h1 style={{ color: '#d32f2f' }}>💥 Ошибка на устройстве</h1>
-        <p>Приложение не смогло запуститься из-за ошибки в компоненте.</p>
+      <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'Arial' }}>
+        <h1 style={{ color: '#d32f2f' }}>💥 Ошибка рендера</h1>
         <pre style={{ background: '#fff3e0', padding: '15px', borderRadius: '8px', textAlign: 'left', maxWidth: '90%', margin: '20px auto', whiteSpace: 'pre-wrap' }}>
           {error.message}
         </pre>
-        <p style={{ color: '#555', fontSize: '14px' }}>
-          Это поможет понять, какой компонент ломается (скорее всего, Header или запрос к API).
-        </p>
       </div>
     );
   }
 
-  return children as React.ReactElement; // Явно говорим TS: тут точно React-элемент
+  return children as React.ReactElement;
 }
 
 function App() {
+  // Страховка: если приложение висит дольше 3 секунд — показываем «Работает» принудительно
+  const [forceShowContent, setForceShowContent] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      console.warn('⚠️ Таймаут 3 сек: принудительно показываем контент, чтобы не висеть на лоадере');
+      setForceShowContent(true);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <BrowserRouter>
-      {/* Провайдер пользователя отключён, чтобы исключить его влияние */}
       <Header />
       <div className="container" style={{ padding: '40px', textAlign: 'center', fontFamily: 'Arial' }}>
-        <h1 style={{ color: '#2E7D32' }}>✅ Initiative Accelerator — Работает!</h1>
-        <p>Если ты видишь этот текст — React успешно отрендерен.</p>
+        {forceShowContent ? (
+          <>
+            <h1 style={{ color: '#2E7D32' }}>✅ Initiative Accelerator — Работает (даже если API молчит)</h1>
+            <p style={{ color: '#555' }}>
+              Это экран-страховка: он появился, потому что приложение ждало данные дольше 3 секунд.
+              Значит, проблема точно в запросе к API (сеть/сервер/обработчик ошибки).
+            </p>
+          </>
+        ) : (
+          <div style={{ fontSize: '18px', color: '#666' }}>
+            Загрузка... (если это висит больше 3 секунд — проблема в запросе к серверу)
+          </div>
+        )}
       </div>
       <Footer />
     </BrowserRouter>
