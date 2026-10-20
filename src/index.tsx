@@ -7,14 +7,17 @@ import { BrowserRouter } from 'react-router-dom';
 import Header from './Modules/header';
 import Footer from './Modules/footer';
 
-// Простой ErrorBoundary, который показывает ошибку прямо на странице
-function ErrorBoundary({ children }) {
+// Типизируем пропсы для ErrorBoundary
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+function ErrorBoundary({ children }: ErrorBoundaryProps) {
   const [error, setError] = React.useState<Error | null>(null);
 
   React.useEffect(() => {
     const handleError = (event: ErrorEvent) => {
       setError(event.error);
-      // В реальном проекте сюда бы летела отправка в Sentry, но тут нам нужно просто показать
     };
     window.addEventListener('error', handleError as any);
     return () => window.removeEventListener('error', handleError as any);
