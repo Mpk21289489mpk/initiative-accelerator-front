@@ -10,7 +10,6 @@ import "./index.css";
 import { GlobalUserStateContextProvider } from './Modules/User/User';
 import AddPrivateInitiativePage from "./Pages/addPrivateInitiative";
 import Header from './Modules/header';
-import Footer from './Modules/footer';
 import RatingPage from "./Pages/rating";
 import AuthPage from './Pages/auth';
 import RegPage from './Pages/register';
@@ -76,7 +75,6 @@ function Index() {
             <Route path='/statistic/bigInitiativesStatistics.csv' element={<BigInitiativesStatistics />}></Route>
           </Routes>
         </div>
-        <Footer />
       </GlobalUserStateContextProvider>
     </BrowserRouter>  
 </SiteClosed>

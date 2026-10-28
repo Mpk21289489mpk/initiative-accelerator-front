@@ -19,7 +19,7 @@ function Header() {
                         height: "40px",
                         width: "40px"
                     }}
-                    src="https://pk10.mskobr.ru/attach_files/logo/%D0%BB%D0%BE%D0%B3%D0%BE%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82.png" alt="logo" />
+                    src={`${process.env.PUBLIC_URL}/images/logos/initiative.svg`} alt="Акселератор инициатив" />
                 </a>
                 {user.userParams.role != "default" ? <NotifContainer /> : null}
                 <button className="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasDarkNavbar" aria-controls="offcanvasDarkNavbar">
