@@ -1,119 +1,79 @@
-import React, { useEffect, useState } from 'react';
+import React, { Children, Dispatch, ReactNode, SetStateAction, useEffect, useState } from 'react';
 import { userRoles } from '../../enums/userRoles';
 import IUser from '../../interfaces/user';
-
+/**Интерфейс provider'а данных о пользователе */
 export interface IUserProviderProps {
-    children: React.ReactNode;
+    children: React.ReactNode
 }
+/**Интерфейс пользователя */
 
-export const defaultUserParams: IUser = {
-    name: 'guest',
-    surname: '',
-    email: '',
-    id: '',
-    token: '',
+
+
+/**Параметры пользователя по умолчанию*/
+export let defaultUserParams: IUser = {
+    name: "default",
+    surname: "default",
+    email: "default",
+    id: "default",
+    token: "default",
     role: userRoles.default,
-    birth: new Date('2000-01-01'),
+    birth: new Date("2000-01-01"),
     edu_group: null,
     avatarURI: null,
     score: 0,
-    email_verified: 0,
-    notifs_checked: 1
-};
-
-export interface IUserContext {
-    userParams: IUser;
-    UpdateUser: React.Dispatch<React.SetStateAction<IUser>>;
-    loading: boolean;
-    error: string | null;
+    email_verified:0,
+    notifs_checked:1
 }
 
-export const globalUserContext = React.createContext<IUserContext>({
-    userParams: defaultUserParams,
-    UpdateUser: () => {},
-    loading: true,
-    error: null
-});
+/**Интерфейс для контекста пользователя */
+export interface IUserContext {
+    userParams: IUser,
+    UpdateUser: React.Dispatch<React.SetStateAction<IUser>>
+}
 
+
+
+
+/**Контекст с параметрами пользователя */
+export const globalUserContext = React.createContext<IUserContext>({ userParams: defaultUserParams, UpdateUser: () => { } });
+/**
+ * Функция оборачивает дочерние элементы в контекст пользователя
+ * @param props
+ */
 export const GlobalUserStateContextProvider = (props: IUserProviderProps) => {
-    const [state, setState] = useState<IUser>(defaultUserParams);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        let isMounted = true;
+    if (!!localStorage.getItem("userData")) {
+        defaultUserParams = JSON.parse(localStorage.getItem("userData")!)
+    }
 
-        const fetchUser = async () => {
-            setLoading(true);
-            setError(null);
 
-            // Берём URL из переменной окружения (обязательно с префиксом REACT_APP_)
-            const baseUrl = process.env.REACT_APP_API_URL;
-            const fallbackUrl = 'https://initiative-accelerator-server-black.vercel.app';
-            const finalUrl = baseUrl || fallbackUrl;
+    const [state, dispatch] = useState(defaultUserParams);
+    async function updateUserFromServer() {
+        await fetch(`${process.env.REACT_APP_BACKEND_SERVER_DOMAIN}/api/get_me/`, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json'
+            },
 
-            const endpoint = '/api/get_me'; 
-            const url = `${finalUrl}${endpoint}`;
-
-            try {
-                const controller = new AbortController();
-                // Таймаут: если сеть медленная, запрос принудительно оборвётся через 8 сек
-                const timeoutId = setTimeout(() => controller.abort(), 8000); 
-
-                const response = await fetch(url, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        // Раскомментируй, когда будешь готов передавать реальный токен:
-                        // 'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    credentials: 'include',
-                    signal: controller.signal
-                });
-
-                clearTimeout(timeoutId);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const data: IUser = await response.json();
-
-                if (isMounted) {
-                    setState(data);
-                }
-            } catch (err) {
-                console.error('[Auth] Ошибка загрузки пользователя:', err);
-                if (isMounted) {
-                    setError('Не удалось загрузить профиль. Проверьте соединение или попробуйте позже.');
-                    setLoading(false);
-                }
-            } finally {
-                if (isMounted) {
-                    setLoading(false);
-                }
+            body: JSON.stringify({ "token": defaultUserParams.token })
+        }).then(resp => resp.json()).then((user: IUser) => {
+            if (state != user) {
+                localStorage.setItem("userData", JSON.stringify(user))
             }
-        };
 
-        fetchUser();
-
-        return () => {
-            isMounted = false;
-        };
-    }, []);
-
+        }).catch((err) => {
+            localStorage.clear();
+        })
+    }
+    updateUserFromServer();
     return (
-        <globalUserContext.Provider value={{
-            userParams: state,
-            UpdateUser: setState,
-            loading,
-            error
-        }}>
+        <globalUserContext.Provider value={{ userParams: state, UpdateUser: dispatch }}>
             {props.children}
         </globalUserContext.Provider>
     );
-};
+}
 
+/**Хук для просмотра и изменения параметров пользователя */
 export const useGlobalUserState = () => {
-    return React.useContext(globalUserContext);
+    return (React.useContext(globalUserContext));
 };

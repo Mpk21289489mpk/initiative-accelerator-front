@@ -1,198 +1,164 @@
 import { Button } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
-import Select from "react-select";
+import Select from 'react-select';
+import { json } from "stream/consumers";
 import IUser from "../../interfaces/user";
 import CheckModerator from "../../Modules/Check/CheckModerator";
+import preloader from "../../Modules/preloader";
 import { useGlobalUserState } from "../../Modules/User/User";
-
-interface Option {
-    label: string;
-    value: string;
-}
-
 function AddPrivateInitiativePage() {
     const currentUser = useGlobalUserState();
+
     const [btnDisabled, setBtnDisabled] = useState(false);
-    const [countOfUsers, setCountOfUsers] = useState(1);
 
-    // usersOptions — список опций для селекта; null означает, что данные ещё грузятся
-    const [usersOptions, setUsersOptions] = useState<Option[] | null>(null);
-    // selectedValues — выбранные значения для каждого селекта (может быть null)
-    const [selectedValues, setSelectedValues] = useState<(Option | null)[]>([]);
+    const [countOfUsers, setCountOfUsers] = useState(0)
+    let usersSelectsRefs: any = useRef([]);
+    usersSelectsRefs.current = [];
 
-    const titleRef = useRef<HTMLInputElement | null>(null);
-    const incomeRef = useRef<HTMLInputElement | null>(null);
-    const contentRef = useRef<HTMLTextAreaElement | null>(null);
-    const completeDayRef = useRef<HTMLInputElement | null>(null);
-    const completeTimeRef = useRef<HTMLInputElement | null>(null);
-    const categoryRef = useRef<HTMLSelectElement | null>(null);
-
-    useEffect(() => {
-        // Защита: не делаем запрос, если токена нет или он дефолтный
-        if (!currentUser.userParams.token || currentUser.userParams.token === "default") {
-            return;
+    const addToSelectsRefs = (el: any) => {
+        if (el != null) {
+            usersSelectsRefs.current.push(el)
         }
+        console.log(usersSelectsRefs.current)
+    }
 
-        fetch(`${process.env.REACT_APP_API_URL}/api/get_all_users/`, {
-            headers: { "Content-Type": "application/json" },
-            method: "POST",
-            body: JSON.stringify({ token: currentUser.userParams.token })
-        })
-            .then((res) => res.json())
-            // ВАЖНО: response — это массив пользователей
-            .then((response: IUser[]) => {
-                const options: Option[] = response.map((user) => ({
-                    label: `${user.name} ${user.surname} (${user.email})`,
-                    value: JSON.stringify(user)
-                }));
-                setUsersOptions(options);
-                // При загрузке инициализируем массив выбранных значений пустыми (null)
-                setSelectedValues(Array(countOfUsers).fill(null));
-            })
-            .catch((err) => {
-                console.error("Ошибка загрузки пользователей:", err);
-                setUsersOptions([]);
-                setSelectedValues(Array(countOfUsers).fill(null));
-            });
-    }, [currentUser.userParams.token, countOfUsers]);
+    let titleRef = React.createRef<HTMLInputElement>();
+    let incomeRef = React.createRef<HTMLInputElement>();
+    let contentRef = React.createRef<HTMLTextAreaElement>();
 
-    // Синхронизируем длину selectedValues с countOfUsers
-    useEffect(() => {
-        setSelectedValues((prev) => {
-            const newValues = [...prev];
-            if (newValues.length < countOfUsers) {
-                return [...newValues, ...Array(countOfUsers - newValues.length).fill(null)];
-            } else if (newValues.length > countOfUsers) {
-                return newValues.slice(0, countOfUsers);
+    let completeDayRef = React.createRef<HTMLInputElement>();
+    let completeTimeRef = React.createRef<HTMLInputElement>();
+
+    let categoryRef = React.createRef<HTMLSelectElement>();
+    let selectedUsers: IUser[] | null = null;
+
+    const [users, setUsers] = useState([{ label: "", value: "" }])
+    const [usersSelects, setUsersSelects] = useState([<select key={"index"} className="form-select" aria-label="" />])
+
+    function createInitiative() {
+        selectedUsers = []
+        usersSelectsRefs.current.forEach((el: any) => {
+            if (el.props.value && !!el.props.value.value) {
+                selectedUsers?.push(JSON.parse(el.props.value.value));
             }
-            return newValues;
-        });
-    }, [countOfUsers]);
 
-    const handleSelectChange = (value: Option | null, index: number) => {
-        const newValues = [...selectedValues];
-        newValues[index] = value;
-        setSelectedValues(newValues);
-    };
+        })
+        console.log(selectedUsers)
 
-    const createInitiative = () => {
-        // Предикат типа: после этого фильтра TypeScript знает, что validUsers — это Option[] (без null)
-        const validUsers = selectedValues.filter((v): v is Option => v !== null && v.value !== "");
+        if (titleRef.current!.value.length > 0 && !!selectedUsers[0] && !!selectedUsers[0].token && selectedUsers[0].token.length > 1) {
+            fetch(`${process.env.REACT_APP_BACKEND_SERVER_DOMAIN}/api/add_initiative/`, {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                method: "POST",
 
-        if (!titleRef.current?.value || validUsers.length === 0) {
+                body: JSON.stringify({
+                    token: currentUser.userParams.token,
+                    title: titleRef.current?.value,
+                    income: incomeRef.current?.value,
+                    take_deadline: new Date().getTime() - 1000,
+                    complete_deadline: new Date(`${completeDayRef.current?.value} ${completeTimeRef.current?.value}`).getTime(),
+                    content: contentRef.current?.value,
+                    category: categoryRef.current?.value,
+                    isPrivate: true,
+                    users_limit: Object.keys(selectedUsers!).length
+                })
+            }).then(res => res.json().then((response: any) => {
+
+                new Promise((resolve: any, reject: any) => {
+                    let count = 0;
+                    selectedUsers?.forEach((selectedUser: IUser) => {
+                        fetch(`${process.env.REACT_APP_BACKEND_SERVER_DOMAIN}/api/start_initiative/`, {
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            method: "POST",
+
+                            body: JSON.stringify({ token: selectedUser!.token, initiative_id: response[0].id })
+                        }).then(() => {
+                            count += 1;
+                            if (count == Object.keys(selectedUsers!).length) {
+                                resolve();
+                            }
+                        })
+                    })
+
+                }).then(() => {
+                    alert("Создано и назначено пользователям!");
+                    document.location.reload();
+                })
+
+            }))
+        } else {
             alert("Не выполнено, проверьте корректность заполнения полей!");
             setBtnDisabled(false);
-            return;
         }
 
-        const initiativeData = {
-            token: currentUser.userParams.token,
-            title: titleRef.current.value,
-            income: incomeRef.current?.value,
-            take_deadline: Date.now() - 1000,
-            complete_deadline: new Date(
-                `${completeDayRef.current?.value} ${completeTimeRef.current?.value}`
-            ).getTime(),
-            content: contentRef.current?.value,
-            category: categoryRef.current?.value,
-            isPrivate: true,
-            users_limit: validUsers.length
-        };
+    }
 
-        fetch(`${process.env.REACT_APP_API_URL}/api/add_initiative/`, {
-            headers: { "Content-Type": "application/json" },
+
+
+    useEffect(() => {
+        fetch(`${process.env.REACT_APP_BACKEND_SERVER_DOMAIN}/api/get_all_users/`, {
+            headers: {
+                'Content-Type': 'application/json'
+            },
             method: "POST",
-            body: JSON.stringify(initiativeData)
-        })
-            .then((res) => res.json())
-            .then((response: any) => {
-                const initiativeId = response.id;
-                const promises = validUsers.map((selectedUser) => {
-                    const user = JSON.parse(selectedUser.value);
-                    return fetch(`${process.env.REACT_APP_API_URL}/api/start_initiative/`, {
-                        headers: { "Content-Type": "application/json" },
-                        method: "POST",
-                        body: JSON.stringify({ token: user.token, initiative_id: initiativeId })
-                    });
-                });
 
-                return Promise.all(promises);
-            })
-            .then(() => {
-                alert("Создано и назначено пользователям!");
-                window.location.reload();
-            })
-            .catch((err) => {
-                console.error(err);
-                alert("Ошибка при создании инициативы");
-                setBtnDisabled(false);
-            });
-    };
+            body: JSON.stringify({ token: currentUser.userParams.token })
+        }).then(res => res.json().then(
+            (response: IUser[]) => {
+                setUsers([]);
+                response.forEach((user: IUser) => {
+                    setUsers((prev) => [...prev, { label: `${user.name} ${user.surname} (${user.email})`, value: JSON.stringify(user) }])
+                })
+                setCountOfUsers(1);
+            }
+        ))
+    }, [])
 
-    return (
+    useEffect(() => {
+        setUsersSelects([]);
+        for (let index = 0; index < countOfUsers; index++) {
+            let element = <Select key={index} options={users} className="form-select" aria-label="" ref={addToSelectsRefs} />
+            setUsersSelects((prev) => [...prev, element])
+        }
+    }, [countOfUsers])
+
+    return <>
         <CheckModerator>
             <div className="py-3">
                 <div className="row g-2">
+
                     <div className="col-md-6 col-12">
                         <div className="row g-2">
+
                             <div className="col-12 col-md-6">
                                 <div className="form-floating mb-3 text-dark">
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        id="floatingInput"
-                                        placeholder="Заголовок"
-                                        ref={titleRef}
-                                    />
+                                    <input type="text" className="form-control" id="floatingInput" placeholder="Заголовок" ref={titleRef} />
                                     <label htmlFor="floatingInput">Заголовок</label>
                                 </div>
                             </div>
 
                             <div className="col-12 col-md-6">
                                 <div className="form-floating mb-3 text-dark">
-                                    <input
-                                        type="number"
-                                        className="form-control"
-                                        id="floatingInput"
-                                        placeholder="Баллов за выполнение"
-                                        ref={incomeRef}
-                                    />
+                                    <input type="number" className="form-control" id="floatingInput" placeholder="Баллов за выполнение" ref={incomeRef} />
                                     <label htmlFor="floatingInput">Баллов за выполнение</label>
                                 </div>
                             </div>
-
                             <div className="col-12">
                                 <div className="form-group">
                                     <label htmlFor="inputDate">Нужно выполнить до:</label>
-                                    <input
-                                        type="date"
-                                        className="form-control my-2"
-                                        ref={completeDayRef}
-                                    />
-                                    <input
-                                        type="time"
-                                        className="form-control my-2"
-                                        ref={completeTimeRef}
-                                    />
+                                    <input type="date" className="form-control my-2" ref={completeDayRef} />
+                                    <input type="time" className="form-control my-2" ref={completeTimeRef} />
                                 </div>
                             </div>
-
                             <div className="col-12">
                                 <div className="form-floating mb-3 text-dark">
-                                    <input
-                                        type="number"
-                                        value={countOfUsers}
-                                        onChange={(e) =>
-                                            setCountOfUsers(Math.max(1, parseInt(e.target.value) || 1))
-                                        }
-                                        className="form-control"
-                                        id="floatingInput"
-                                        placeholder="Кол-во пользователей"
-                                    />
+                                    <input type="number" value={countOfUsers} className="form-control" id="floatingInput" placeholder="Баллов за выполнение" />
                                     <label htmlFor="floatingInput">Ограничение по кол-ву пользователей</label>
                                 </div>
                             </div>
-
                             <div className="col-12">
                                 <label>Категория:</label>
                                 <select className="form-select" aria-label="" ref={categoryRef}>
@@ -204,78 +170,37 @@ function AddPrivateInitiativePage() {
                                     <option value="Креативность">Креативность</option>
                                 </select>
                             </div>
-
                             <div className="col-12">
                                 <label>Пользователь:</label>
-                                {usersOptions === null ? (
-                                    <p>Загрузка списка пользователей...</p>
-                                ) : (
-                                    Array.from({ length: countOfUsers }, (_, index) => (
-                                        <div key={index} className="mb-2">
-                                            <Select
-                                                options={usersOptions}
-                                                value={selectedValues[index]}
-                                                onChange={(val) => handleSelectChange(val, index)}
-                                                placeholder="Выберите пользователя"
-                                            />
-                                        </div>
-                                    ))
-                                )}
+                                {usersSelects}
+                            </div>
+                            <div className="col-6">
+                                <div className="btn btn-outline-info rounded-4 p-2 w-100" onClick={() => { setCountOfUsers(prev => prev + 1) }}>Добавить</div>
+                            </div>
+                            <div className="col-6">
+                                <div className="btn btn-outline-info rounded-4 p-2 w-100" onClick={() => { setCountOfUsers(prev => prev < 2 ? 1 : prev - 1) }}>Убрать</div>
                             </div>
 
-                            <div className="col-6">
-                                <div
-                                    className="btn btn-outline-info rounded-4 p-2 w-100"
-                                    onClick={() => setCountOfUsers((prev) => prev + 1)}
-                                >
-                                    Добавить
-                                </div>
-                            </div>
-                            <div className="col-6">
-                                <div
-                                    className="btn btn-outline-info rounded-4 p-2 w-100"
-                                    onClick={() => setCountOfUsers((prev) => (prev < 2 ? 1 : prev - 1))}
-                                >
-                                    Убрать
-                                </div>
-                            </div>
                         </div>
                     </div>
 
                     <div className="col-12 col-md-6">
                         <div className="form-floating text-dark">
-                            <textarea
-                                className="form-control"
-                                placeholder="Описание"
-                                id="floatingTextarea2"
-                                style={{ height: "490px" }}
-                                ref={contentRef}
-                            ></textarea>
+                            <textarea className="form-control" placeholder="Описание" id="floatingTextarea2" style={{ height: "490px" }} ref={contentRef}></textarea>
                             <label htmlFor="floatingTextarea2">Описание</label>
                         </div>
                     </div>
-
                     <div className="col-12 fs-6">
                         *Укажите ограничение по кол-ву пользователей = 0 для снятия ограничения.
                     </div>
 
                     <div className="col-12">
-                        <Button
-                            variant="outlined"
-                            className="w-100"
-                            disabled={btnDisabled}
-                            onClick={() => {
-                                setBtnDisabled(true);
-                                createInitiative();
-                            }}
-                        >
-                            Создать
-                        </Button>
+                        <Button variant="outlined" className="w-100" disabled={btnDisabled} onClick={(clickedElement) => { setBtnDisabled(true); createInitiative() }}>Создать</Button>
                     </div>
+
                 </div>
             </div>
         </CheckModerator>
-    );
+    </>
 }
-
 export default AddPrivateInitiativePage;
